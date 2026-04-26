@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Image Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='stt.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+
+<body>
+
+  <nav>
+    <div class="logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    </div>
+
+    <div class="nav-links">
+      <a href="#" class="nav-item flip-item active">
+        <span class="front">Home</span>
+        <span class="back"><img src="{{ url_for('static', filename='home.png') }}" alt="Home"></span>
+      </a>
+
+      <a href="#" id="openAbout" class="nav-item flip-item">
+        <span class="front">About</span>
+        <span class="back"><img src="{{ url_for('static', filename='about.png') }}" alt="About"></span>
+      </a>
+
+      <a href="#upload" class="nav-item flip-item">
+        <span class="front">Upload</span>
+        <span class="back"><img src="{{ url_for('static', filename='upload.png') }}" alt="Upload"></span>
+      </a>
+
+      <a href="#" class="nav-item flip-item">
+        <span class="front">Contact</span>
+        <span class="back"><img src="{{ url_for('static', filename='contact.png') }}" alt="Contact"></span>
+      </a>
+
+      <span class="nav-indicator"></span>
+    </div>
+
+    <div class="theme-switch" id="themeToggle">
+      <div class="theme-knob">
+        <span class="theme-icon moon">🌙</span>
+        <span class="theme-icon sun">☀️</span>
+      </div>
+      <span class="theme-label dark-text">Dark</span>
+      <span class="theme-label light-text">Light</span>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>AIG-Detect</h1>
+      <h2>Uncover the Truth Behind Every Image</h2>
+      <p>Upload any image and let our intelligent system analyze it instantly, revealing whether it’s real or
+        AI-generated with high accuracy and confidence.</p>
+
+      <div class="hero-buttons">
+        <a href="#upload" class="btn">Start Detection</a>
+      </div>
+
+      <div class="hero-tags">
+        <span>Real-Time Detection </span>
+        <span>High Accuracy Results</span>
+        <span>AI-Powered Analysis</span>
+      </div>
+    </div>
+
+    <div class="hero-img">
+      <div class="float-wrapper">
+        <div class="circle-shape">
+          <img src="{{ url_for('static', filename='pp-removebg-preview.png') }}" alt="AI Face">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="upload-section" id="upload">
+    <h2>Upload Your Image</h2>
+    <div class="upload-box">
+      <label for="fileInput">Click or Drag Image Here</label>
+      <input type="file" id="fileInput" />
+
+      <img id="previewImage" class="preview-image" alt="Preview">
+
+      <button class="btn upload-btn" onclick="analyze()">Analyze</button>
+
+      <div class="loading-robot" id="loadingRobot">
+        <img src="{{ url_for('static', filename='RO-SERCH.png') }}" alt="Loading Robot">
+        <p>Analyzing image...</p>
+      </div>
+
+      <div class="result" id="result"></div>
+
+      <div id="gradcamContainer" style="display:none; text-align: center; margin-top: 20px;">
+        <h4 style="color: #ffd700; margin-bottom: 10px;">Explainable AI (Grad-CAM):</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: flex-start;">
+          <div>
+            <p style="font-size: 0.8rem; color: #ddd; margin: 4px 0;">Heatmap Only</p>
+            <img id="heatmapImage" src=""
+              style="width: 100%; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);">
+          </div>
+          <div>
+            <p style="font-size: 0.8rem; color: #ddd; margin: 4px 0;">Original</p>
+            <img id="originalImage" src=""
+              style="width: 100%; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 0 0 2px rgba(255,215,0,0.25);">
+          </div>
+          <div>
+            <p style="font-size: 0.8rem; color: #ddd; margin: 4px 0;">Overlay</p>
+            <img id="gradcamImage" src=""
+              style="width: 100%; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);">
+          </div>
+          
+        </div>
+        <p style="font-size: 0.8rem; color: #bbb; margin-top: 5px;">المناطق الملونة توضح أجزاء الوجه التي ركز عليها
+          النظام.</p>      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="card">
+      <h3>⚡ Fast</h3>
+      <p>Instant analysis with smooth experience.</p>
+    </div>
+    <div class="card">
+      <h3>🎯 Accurate</h3>
+      <p>AI-powered prediction with confidence score.</p>
+    </div>
+    <div class="card">
+      <h3>🔒 Secure</h3>
+      <p>Your uploaded images stay private and safe.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 AI Image Detector | Graduation Project</p>
+  </footer>
+
+  <div class="about-modal" id="aboutModal">
+    <div class="about-overlay" id="closeAbout"></div>
+    <div class="about-popup">
+      <button class="close-about" id="closeAboutBtn">&times;</button>
+      <h2>About The Project</h2>
+      <p class="about-desc">
+        This graduation project focuses on detecting AI-generated images using Deep Fake.
+      </p>
+      <div class="about-scene">
+        <div class="about-carousel" id="aboutCarousel">
+          <div class="about-card">
+            <h3>Overview</h3>
+            <p>...</p>
+          </div>
+          <div class="about-card">
+            <h3>Why This Matters</h3>
+            <p>...</p>
+          </div>
+          <div class="about-card">
+            <h3>How It Works</h3>
+            <p>...</p>
+          </div>
+          <div class="about-card">
+            <h3>What You Get</h3>
+            <p>...</p>
+          </div>
+          <div class="about-card">
+            <h3>Features</h3>
+            <p>...</p>
+          </div>
+          <div class="about-card">
+            <h3>Future Improvements</h3>
+            <p>...</p>
+          </div>
+        </div>
+      </div>
+      <div class="about-controls">
+        <button id="aboutPrev" class="about-nav-btn">←</button>
+        <button id="aboutNext" class="about-nav-btn">→</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
