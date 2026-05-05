@@ -1,356 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AIG-Detect | AI Image Forensics</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='stt.css') }}?v=3.0">
-
-  <!-- NEW: Professional Fonts -->
+  <title>AIG-Detect | Deepfake Forensics</title>
+  
+  <!-- Modern Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap"
-    rel="stylesheet">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- jsPDF for Report Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='stt.css') }}?v=4.0">
 </head>
-
 <body>
-
-  <nav>
-    <div class="logo">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-    </div>
-
-    <!-- Original 3D Nav but styled slightly more glassmorphism -->
-    <div class="nav-links">
-      <a href="#" class="nav-item flip-item active">
-        <span class="front">Home</span>
-        <span class="back"><img src="{{ url_for('static', filename='home.png') }}" alt="Home"></span>
-      </a>
-
-      <a href="#" id="openAbout" class="nav-item flip-item">
-        <span class="front">About</span>
-        <span class="back"><img src="{{ url_for('static', filename='about.png') }}" alt="About"></span>
-      </a>
-
-      <a href="#upload" class="nav-item flip-item">
-        <span class="front">Scan</span>
-        <span class="back"><img src="{{ url_for('static', filename='upload.png') }}" alt="Upload"></span>
-      </a>
-
-      <a href="#" class="nav-item flip-item">
-        <span class="front">Contact</span>
-        <span class="back"><img src="{{ url_for('static', filename='contact.png') }}" alt="Contact"></span>
-      </a>
-
-      <a href="#" id="openHistory" class="nav-item flip-item">
-        <span class="front">Logs</span>
-        <span class="back">
-          <img src="{{ url_for('static', filename='his.png') }}" alt="History">
-        </span>
-      </a>
-
-      <span class="nav-indicator"></span>
-    </div>
-
-    <div class="theme-switch" id="themeToggle">
-      <div class="theme-knob">
-        <span class="theme-icon moon">🌙</span>
-        <span class="theme-icon sun">☀️</span>
+  <!-- The Vue App Mount Point -->
+  <div id="app" v-cloak>
+    
+    <!-- Navbar -->
+    <nav :class="{'scrolled': isScrolled}">
+      <div class="logo">
+        <i class="ph ph-shield-check"></i>
+        <span>AIG-Detect</span>
       </div>
-      <span class="theme-label dark-text">Dark</span>
-      <span class="theme-label light-text">Light</span>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <div class="hero-text">
-      <!-- UPDATED TEXT (Professional) -->
-      <h1>AIG-Detect</h1>
-      <h2>Uncover the Truth Behind Every Image</h2>
-      <p>Upload suspect imagery for immediate analysis. Our deep-learning pipeline utilizes Capsule Networks and
-        Grad-CAM to detect pixel-level anomalies and AI synthesis traces.</p>
-
-      <div class="hero-buttons">
-        <a href="#upload" class="btn">Initialize Scan</a>
+      
+      <div class="nav-links">
+        <a href="#home" class="nav-item active">
+          <i class="ph ph-house"></i> <span>Dashboard</span>
+        </a>
+        <a href="#scanner" class="nav-item">
+          <i class="ph ph-scan"></i> <span>Scanner</span>
+        </a>
+        <a href="#" @click.prevent="showHistory = true" class="nav-item">
+          <i class="ph ph-clock-counter-clockwise"></i> <span>Logs</span>
+        </a>
+        <a href="#" @click.prevent="showAbout = true" class="nav-item">
+          <i class="ph ph-info"></i> <span>Architecture</span>
+        </a>
       </div>
 
-      <div class="hero-tags">
-        <span>CapsuleNet Architecture</span>
-        <span>Grad-CAM Visual Explanations</span>
-        <span>High Accuracy Results</span>
+      <div class="user-actions">
+        <button class="theme-toggle" @click="toggleTheme">
+          <i :class="isDark ? 'ph ph-sun' : 'ph ph-moon'"></i>
+        </button>
       </div>
-    </div>
+    </nav>
 
-    <div class="hero-img">
-      <!-- Original Floating Image -->
-      <div class="float-wrapper">
-        <div class="circle-shape">
-          <img src="{{ url_for('static', filename='im2.png') }}" alt="AI Face">
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="upload-section" id="upload">
-    <!-- NEW: Professional Upload Area -->
-    <div class="section-header-custom">
-      <h2>Forensic Analysis Engine</h2>
-      <p>Drop an image file to begin pixel-level investigation</p>
-    </div>
-
-    <div class="upload-layout-wrapper">
-      <div class="upload-box-custom">
-        <label for="fileInput" class="upload-label-custom">
-          <div class="upload-icon-custom">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
+    <main class="main-content">
+      <!-- Hero Section -->
+      <section id="home" class="hero">
+        <div class="hero-content">
+          <div class="badge">Advanced AI Forensics</div>
+          <h1>Enterprise-Grade <br><span class="gradient-text">Deepfake Detection</span></h1>
+          <p>Utilizing Capsule Networks and Grad-CAM to detect pixel-level anomalies and AI synthesis traces with high precision.</p>
+          <div class="hero-actions">
+            <a href="#scanner" class="btn btn-primary">
+              <i class="ph ph-rocket-launch"></i> Initialize Scan
+            </a>
+            <button class="btn btn-secondary" @click="showAbout = true">
+              <i class="ph ph-file-code"></i> View Documentation
+            </button>
           </div>
-          <span class="label-primary-custom">Select or Drop Target File</span>
-          <span class="label-secondary-custom">Supports JPG, PNG (Max 5MB)</span>
-        </label>
-        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg" />
-
-        <div class="preview-wrapper-custom" id="previewWrapper" style="display: none;">
-          <img id="previewImage" class="preview-image-custom" alt="Target Preview">
-          <div class="cyber-laser" id="laserScanner"></div>
-        </div>
-
-        <button id="analyzeBtn" class="btn upload-btn-custom">Execute Analysis</button>
-
-        <!-- NEW: Terminal Loader replacing the Robot -->
-        <div class="terminal-loader" id="terminalLoader" style="display: none;">
-          <div class="terminal-header">
-            <span>Process: root@aig-detect</span>
-            <span class="terminal-status">Running...</span>
-          </div>
-          <div class="terminal-body" id="terminalLogs">
-            <div class="log-line">> Initiating deep scan protocol...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- NEW: Professional Dashboard -->
-      <div id="dashboardContainer" class="dashboard-container-custom" style="display: none;">
-
-        <div class="dashboard-header-custom">
-          <h3>Analysis Report</h3>
-          <button id="downloadBtn" class="export-btn-custom" title="Export PDF">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
-            Export PDF
-          </button>
-        </div>
-
-        <div class="verdict-panel-custom">
-          <div class="verdict-primary-custom">
-            <span class="verdict-label-custom">Classification:</span>
-            <h3 id="resultText" class="result-value-custom"></h3>
-          </div>
-          <div class="confidence-meter-custom">
-            <div class="circular-progress-custom">
-              <svg viewBox="0 0 36 36">
-                <path class="circle-bg-custom"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle-value-custom" id="confidenceCircle" stroke-dasharray="0, 100"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              </svg>
-              <div class="score-display-custom">
-                <span id="confidenceValue">0%</span>
-                <span class="score-label-custom">CONFIDENCE</span>
-              </div>
+          <div class="metrics">
+            <div class="metric">
+              <span class="value">99.8%</span>
+              <span class="label">Accuracy</span>
+            </div>
+            <div class="metric">
+              <span class="value">< 2s</span>
+              <span class="label">Analysis Time</span>
+            </div>
+            <div class="metric">
+              <span class="value">CapNet</span>
+              <span class="label">Architecture</span>
             </div>
           </div>
         </div>
+        <div class="hero-visual">
+          <div class="glass-panel main-panel">
+            <img src="{{ url_for('static', filename='im2.png') }}" alt="AI Visual" class="floating-img">
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </section>
 
-        <div class="dashboard-tabs-custom">
-          <button class="tab-btn-custom active" data-tab="tab-xai">Grad-CAM Maps</button>
-          <button class="tab-btn-custom" data-tab="tab-ela">Pixel Forensics</button>
-          <button class="tab-btn-custom" data-tab="tab-metadata">Metadata</button>
+      <!-- Scanner Section -->
+      <section id="scanner" class="scanner-section">
+        <div class="section-header">
+          <h2>Forensic Scanner</h2>
+          <p>Drop an image file to begin pixel-level investigation</p>
         </div>
 
-        <div class="tab-contents-custom">
-          <!-- Tab 1: XAI -->
-          <div id="tab-xai" class="tab-pane-custom active">
-            <div class="xai-grid-custom">
-              <div class="xai-card-custom">
-                <div class="card-header-custom">Target Source</div>
-                <div class="img-container-custom"><img id="originalImage" src=""></div>
+        <div class="scanner-container">
+          <!-- Upload Area -->
+          <div class="upload-card glass-panel" 
+               @dragover.prevent="isDragging = true" 
+               @dragleave.prevent="isDragging = false" 
+               @drop.prevent="handleDrop"
+               :class="{'dragging': isDragging}"
+               v-show="!isAnalyzing && !hasResult">
+            
+            <input type="file" id="fileInput" ref="fileInput" @change="handleFileSelect" accept="image/png, image/jpeg, image/jpg" hidden>
+            
+            <div class="upload-content" v-if="!previewUrl">
+              <div class="upload-icon-wrapper">
+                <i class="ph ph-upload-simple"></i>
               </div>
-              <div class="xai-card-custom">
-                <div class="card-header-custom">Heatmap Activation</div>
-                <div class="img-container-custom"><img id="heatmapImage" src=""></div>
-              </div>
-              <div class="xai-card-custom overlay-card-custom">
-                <div class="card-header-custom">Synthetic Traces</div>
-                <div class="img-container-custom"><img id="gradcamImage" src=""></div>
+              <h3>Select or Drop Target File</h3>
+              <p>Supports JPG, PNG (Max 5MB)</p>
+              <button class="btn btn-outline" @click="$refs.fileInput.click()">Browse Files</button>
+            </div>
+            
+            <div class="preview-content" v-else>
+              <img :src="previewUrl" alt="Preview">
+              <div class="preview-actions">
+                <button class="btn btn-danger btn-icon" @click="clearFile"><i class="ph ph-x"></i></button>
+                <button class="btn btn-primary" @click="executeAnalysis">
+                  <i class="ph ph-cpu"></i> Execute Analysis
+                </button>
               </div>
             </div>
-            <p class="xai-note-custom">* Highlighted thermal areas indicate specific feature patterns identified as
-              synthetic manipulation by the CapsuleNet layer.</p>
-          </div>
-
-          <!-- Tab 2: ELA (Placeholder) -->
-          <div id="tab-ela" class="tab-pane-custom">
-            <div class="locked-feature-custom">
-              <span class="lock-icon">🔒</span>
-              <h4>Error Level Analysis</h4>
-              <p>Module currently offline. Pending integration for V3.0.</p>
-            </div>
-          </div>
-
-          <!-- Tab 3: Metadata (Placeholder) -->
-          <div id="tab-metadata" class="tab-pane-custom">
-            <div class="locked-feature-custom">
-              <span class="lock-icon">🔒</span>
-              <h4>EXIF & Metadata Extraction</h4>
-              <p>Module currently offline. Pending integration for V3.0.</p>
+            
+            <div class="error-banner" v-if="errorMessage">
+              <i class="ph ph-warning-octagon"></i> [[ errorMessage ]]
             </div>
           </div>
 
+          <!-- Loading State -->
+          <div class="analyzing-card glass-panel" v-show="isAnalyzing">
+            <div class="loader-ring"></div>
+            <h3>Processing Image</h3>
+            <div class="terminal-logs">
+              <div v-for="(log, idx) in terminalLogs" :key="idx" class="log-line">
+                <span class="prompt">>_</span> [[ log ]]
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Dashboard (Stepper UI) -->
+          <div class="results-dashboard" v-if="hasResult && !isAnalyzing" dir="rtl">
+            
+            <div class="stepper-header">
+              <h2>الخطوة [[ currentStep ]] — [[ steps[currentStep-1].name ]]</h2>
+              <div class="stepper-progress">
+                <div v-for="step in steps" :key="step.id" class="step-indicator" :class="{'active': currentStep >= step.id, 'current': currentStep === step.id}">
+                  <div class="step-circle">
+                    <i class="ph ph-check" v-if="currentStep > step.id"></i>
+                    <span v-else>[[ step.id ]]</span>
+                  </div>
+                  <span class="step-label">[[ step.name ]]</span>
+                  <div class="step-line" v-if="step.id < steps.length"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-content">
+              
+              <!-- Step 1: Image Info -->
+              <div v-if="currentStep === 1" class="fade-in">
+                <div class="info-badge"><span>مرحلة 1/5</span> معلومات الصورة 📷</div>
+                
+                <div class="image-preview-card">
+                  <span class="file-name">Target Image</span>
+                  <img :src="resultData.image_info.info_image_url" alt="Detected Faces">
+                </div>
+                
+                <div class="info-grid">
+                  <div class="info-box">
+                    <span class="label">الأبعاد</span>
+                    <span class="value">[[ resultData.image_info.dimensions ]]</span>
+                  </div>
+                  <div class="info-box">
+                    <span class="label">الحجم</span>
+                    <span class="value">[[ resultData.image_info.size ]]</span>
+                  </div>
+                  <div class="info-box">
+                    <span class="label">النوع</span>
+                    <span class="value">[[ resultData.image_info.format ]]</span>
+                  </div>
+                  <div class="info-box">
+                    <span class="label">الأوجه المكتشفة</span>
+                    <span class="value highlight">[[ resultData.image_info.faces_detected ]] أوجه</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2: Face Cropping -->
+              <div v-if="currentStep === 2" class="fade-in">
+                <div class="info-badge"><span>مرحلة 2/5</span> تجزئة الأوجه 👤</div>
+                <div class="faces-grid">
+                  <div v-for="face in resultData.faces" :key="face.face_id" class="face-card clean-card">
+                    <div class="face-header">وجه [[ face.face_id ]]</div>
+                    <img :src="face.cropped_url" class="face-img" alt="Face">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3: Verdict -->
+              <div v-if="currentStep === 3" class="fade-in">
+                <div class="info-badge"><span>مرحلة 3/5</span> نتيجة التحليل لكل وجه ⚖️</div>
+                <div class="faces-grid">
+                  <div v-for="face in resultData.faces" :key="face.face_id" class="face-card status-card" :class="getFaceVerdictClass(face.result)">
+                    <div class="card-top">
+                      <span class="face-label">وجه [[ face.face_id ]]</span>
+                      <span class="verdict-text">[[ face.result.includes('Real') ? 'REAL' : 'FAKE' ]]</span>
+                    </div>
+                    <div class="progress-bar-container">
+                      <div class="progress-fill" :style="{ width: (parseFloat(face.confidence)*100) + '%' }"></div>
+                    </div>
+                    <div class="confidence-text">[[ (parseFloat(face.confidence)*100).toFixed(1) ]]% الثقة</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4: Grad-CAM -->
+              <div v-if="currentStep === 4" class="fade-in">
+                <div class="info-badge"><span>مرحلة 4/5</span> لكل وجه GRAD-CAM خريطة 🔥</div>
+                <div class="faces-grid">
+                  <div v-for="face in resultData.faces" :key="face.face_id" class="face-card status-card" :class="getFaceVerdictClass(face.result)">
+                    <img :src="face.gradcam_url" class="face-img cam-img" alt="Grad-CAM">
+                    <div class="card-bottom-labels">
+                      <span>وجه [[ face.face_id ]]</span>
+                      <span>[[ face.result.includes('Real') ? 'حقيقي' : 'مزيف' ]]</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="helper-text">في وجه التركيز حول حدود الوجه وناحية العينين - CapsuleNet (باللون الأحمر) تشير لمناطق التلاعب التي رصدها الـ</p>
+              </div>
+
+              <!-- Step 5: ELA -->
+              <div v-if="currentStep === 5" class="fade-in">
+                <div class="info-badge"><span>مرحلة 5/5</span> لكل وجه ELA تحليل 🔬</div>
+                <div class="faces-grid">
+                  <div v-for="face in resultData.faces" :key="face.face_id" class="face-card status-card" :class="getFaceElaClass(face.ela_analysis)">
+                    <img :src="face.ela_url" class="face-img ela-img" alt="ELA">
+                    <div class="card-ela-footer">
+                      <span class="ela-status" v-if="getElaStatus(face.ela_analysis) === 'AUTHENTIC'">✓ AUTHENTIC</span>
+                      <span class="ela-status" v-else-if="getElaStatus(face.ela_analysis) === 'MANIPULATED'">✗ MANIPULATED</span>
+                      <span class="ela-status" v-else>⚠ UNCERTAIN</span>
+                      
+                      <span class="ela-desc">[[ face.ela_analysis ]]</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Stepper Navigation -->
+            <div class="stepper-actions">
+              <button class="btn btn-nav" @click="prevStep" :disabled="currentStep === 1">
+                <i class="ph ph-arrow-right"></i> السابق
+              </button>
+              <span class="page-indicator">الصفحة [[ currentStep ]] من [[ steps.length ]]</span>
+              <button class="btn btn-nav" @click="nextStep" v-if="currentStep < steps.length">
+                التالي <i class="ph ph-arrow-left"></i>
+              </button>
+              <button class="btn btn-primary" @click="resetScanner" v-if="currentStep === steps.length">
+                فحص جديد <i class="ph ph-arrows-clockwise"></i>
+              </button>
+            </div>
+
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      </section>
+    </main>
 
-  <!-- Original Features Cards -->
-  <section class="features">
-    <div class="card">
-      <h3>⚡ Fast</h3>
-      <p>Instant analysis with smooth experience.</p>
-    </div>
-    <div class="card">
-      <h3>🎯 Accurate</h3>
-      <p>AI-powered prediction with confidence score.</p>
-    </div>
-    <div class="card">
-      <h3>🔒 Secure</h3>
-      <p>Your uploaded images stay private and safe.</p>
-    </div>
-  </section>
-
-  <footer>
-    <p>© 2026 AI Image Detector | Graduation Project</p>
-  </footer>
-
-  <!-- Original About Carousel but with UPDATED TEXT -->
-  <div class="about-modal" id="aboutModal">
-    <div class="about-overlay" id="closeAbout"></div>
-    <div class="about-popup">
-      <button class="close-about" id="closeAboutBtn">&times;</button>
-      <h2>System Architecture</h2>
-      <p class="about-desc">
-        This graduation project focuses on detecting AI-generated images using advanced computer vision forensics.
-      </p>
-      <div class="about-scene">
-        <div class="about-carousel" id="aboutCarousel">
-          <div class="about-card">
+    <!-- Modals -->
+    <!-- About/Architecture Modal -->
+    <div class="modal-overlay" v-if="showAbout" @click.self="showAbout = false">
+      <div class="modal glass-panel">
+        <div class="modal-header">
+          <h2>System Architecture</h2>
+          <button class="btn-close" @click="showAbout = false"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body architecture-grid">
+          <div class="arch-card">
+            <i class="ph ph-network"></i>
             <h3>Capsule Networks</h3>
-            <p>Utilizes dynamic routing to preserve spatial relationships within images, effectively detecting subtle
-              structural inconsistencies.</p>
+            <p>Utilizes dynamic routing to preserve spatial relationships, detecting subtle structural inconsistencies.</p>
           </div>
-          <div class="about-card">
+          <div class="arch-card">
+            <i class="ph ph-layers-intersection"></i>
             <h3>VGG Extractor</h3>
-            <p>Pre-trained VGG-19 layers extract high-level semantic features before passing them to the primary capsule
-              layers.</p>
+            <p>Pre-trained layers extract high-level semantic features before the primary capsule layers.</p>
           </div>
-          <div class="about-card">
+          <div class="arch-card">
+            <i class="ph ph-aperture"></i>
             <h3>Grad-CAM</h3>
-            <p>Provides visual transparency by highlighting the regions that most strongly influenced the final deepfake
-              prediction.</p>
-          </div>
-          <div class="about-card">
-            <h3>Pixel Forensics</h3>
-            <p>Future modules will include Error Level Analysis to detect pixel tampering and artificial compression
-              artifacts.</p>
-          </div>
-          <div class="about-card">
-            <h3>Metadata Analysis</h3>
-            <p>Future expansions will automatically extract and review hidden EXIF data and generation tags from suspect
-              files.</p>
-          </div>
-          <div class="about-card">
-            <h3>Purpose</h3>
-            <p>Designed as a high-fidelity academic project to demonstrate state-of-the-art methods in distinguishing
-              authentic media.</p>
+            <p>Provides visual transparency by highlighting the regions influencing the deepfake prediction.</p>
           </div>
         </div>
       </div>
-      <div class="about-controls">
-        <button id="aboutPrev" class="about-nav-btn">←</button>
-        <button id="aboutNext" class="about-nav-btn">→</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Report Preview Modal (Original Style but matched fonts) -->
-  <div class="about-modal" id="reportModal">
-    <div class="about-overlay" id="closeReportOverlay"></div>
-    <div class="about-popup report-popup-custom">
-      <div class="report-header">
-        <h2>Report Preview</h2>
-        <button class="close-about" id="closeReportBtn">&times;</button>
-      </div>
-
-      <div id="reportTemplate">
-        <div id="reportPrintArea">
-          <div class="report-print-header">
-            <h1>AIG-Detect Forensic Report</h1>
-            <p id="reportDate"></p>
-          </div>
-          <div class="report-section">
-            <h2>1. Classification Result</h2>
-            <p><strong>Result:</strong> <span id="reportResultText"></span></p>
-            <p><strong>Confidence Score:</strong> <span id="reportConfidenceValue"></span></p>
-          </div>
-          <div class="report-section">
-            <h2>2. Visual Analysis (Grad-CAM)</h2>
-            <div class="report-images-container">
-              <div class="report-image-item">
-                <p><strong>Original</strong></p>
-                <img id="reportOriginalImg" src="">
+    <!-- History Modal -->
+    <div class="modal-overlay" v-if="showHistory" @click.self="showHistory = false">
+      <div class="modal glass-panel">
+        <div class="modal-header">
+          <h2>Scan Logs</h2>
+          <button class="btn-close" @click="showHistory = false"><i class="ph ph-x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="history-list" v-if="history.length > 0">
+            <div class="history-item" v-for="(item, index) in history" :key="index">
+              <img :src="item.original_url" alt="Thumbnail" class="history-thumb">
+              <div class="history-details">
+                <h4>[[ item.result === 'Real Image' ? 'AUTHENTIC' : 'MANIPULATED' ]]</h4>
+                <p>Confidence: [[ (item.confidence * 100).toFixed(1) ]]%</p>
+                <span class="date">[[ new Date(item.date).toLocaleString() ]]</span>
               </div>
-              <div class="report-image-item">
-                <p><strong>Heatmap</strong></p>
-                <img id="reportHeatmapImg" src="">
-              </div>
-              <div class="report-image-item">
-                <p><strong>Overlay</strong></p>
-                <img id="reportOverlayImg" src="">
-              </div>
+              <button class="btn btn-outline btn-sm" @click="loadHistoryItem(item)">View</button>
             </div>
-            <p class="report-note">* Highlighted regions indicate areas the AI focused on to make its decision.</p>
           </div>
-          <div class="report-footer">Generated by AI Image Detector (Graduation Project)</div>
+          <div class="empty-state" v-else>
+            <i class="ph ph-folder-open"></i>
+            <p>No scan logs found.</p>
+          </div>
         </div>
       </div>
-      <div class="report-actions">
-        <button class="btn" id="confirmDownloadBtn">Download PDF</button>
-      </div>
     </div>
+
   </div>
 
-  <!-- History Modal (Original Style) -->
-  <div class="about-modal" id="historyModal">
-    <div class="about-overlay" id="closeHistoryOverlay"></div>
-    <div class="about-popup history-popup-custom">
-      <div class="history-header">
-        <h2>Recent Logs</h2>
-        <button class="close-about" id="closeHistoryBtn">&times;</button>
-      </div>
-      <div id="historyGrid" class="history-grid">
-        <!-- History items injected here -->
-      </div>
-    </div>
-  </div>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- Global Vue State & Logic -->
+  <script>
+    // This variable helps url_for to be passed to Vue if needed, but we rely on API mostly.
+    window.STATIC_URL = "{{ url_for('static', filename='') }}";
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}?v=4.0"></script>
 </body>
-
 </html>
